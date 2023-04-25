@@ -5,7 +5,7 @@
 
 notifications:
   telegram:
-    api_token: 
+    api_token:
     master_ids:
       - 0
 
