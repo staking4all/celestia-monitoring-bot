@@ -15,6 +15,7 @@ import (
 
 type monitorService struct {
 	alertState     map[string]map[int64]*models.ValidatorAlertState
+	userState      map[int64]map[string]*models.ValidatorAlertState
 	valStats       map[string]models.ValidatorStats
 	alertStateLock sync.Mutex
 
@@ -26,6 +27,7 @@ type monitorService struct {
 func NewMonitorService(config models.Config, ns services.NotificationService) (services.MonitorService, error) {
 	m := &monitorService{
 		alertState:     make(map[string]map[int64]*models.ValidatorAlertState),
+		userState:      make(map[int64]map[string]*models.ValidatorAlertState),
 		alertStateLock: sync.Mutex{},
 
 		config: config,
@@ -57,6 +59,14 @@ func (m *monitorService) Add(userID int64, validator *models.Validator) error {
 		return fmt.Errorf("invalid address: %+v", err)
 	}
 
+	if m.userState[userID] == nil {
+		m.userState[userID] = make(map[string]*models.ValidatorAlertState)
+	}
+
+	if m.userState[userID][validator.Address] != nil {
+		return fmt.Errorf("already regitered")
+	}
+
 	if m.alertState[validator.Address] == nil {
 		m.alertState[validator.Address] = make(map[int64]*models.ValidatorAlertState)
 	}
@@ -69,6 +79,8 @@ func (m *monitorService) Add(userID int64, validator *models.Validator) error {
 		SentryHaltErrorCounts:      make(map[string]int64),
 		SentryLatestHeight:         make(map[string]int64),
 	}
+
+	m.userState[userID][validator.Address] = m.alertState[validator.Address][userID]
 
 	zap.L().Debug("added validator", zap.Int64("userID", userID), zap.Any("validator", validator))
 	return nil
@@ -83,6 +95,14 @@ func (m *monitorService) Remove(userID int64, address string) error {
 
 		if len(m.alertState[address]) == 0 {
 			delete(m.alertState, address)
+		}
+	}
+
+	if m.userState[userID] != nil {
+		delete(m.userState[userID], address)
+
+		if len(m.userState[userID]) == 0 {
+			delete(m.userState, userID)
 		}
 	}
 
