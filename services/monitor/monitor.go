@@ -122,6 +122,11 @@ func (m *monitorService) Add(userID int64, v *models.Validator) error {
 }
 
 func (m *monitorService) Remove(userID int64, address string) error {
+	err := m.db.Remove(userID, address)
+	if err != nil {
+		return err
+	}
+
 	m.alertStateLock.Lock()
 	defer m.alertStateLock.Unlock()
 
