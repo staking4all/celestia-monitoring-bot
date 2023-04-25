@@ -46,6 +46,23 @@ func (t *telegramNotificationService) removeValidatorHandler(c telebot.Context) 
 }
 
 func (t *telegramNotificationService) statusHandler(c telebot.Context) error {
+	if len(c.Args()) != 1 {
+		// TODO: list validators regitered to user
+		t.Send(c.Chat(), "Please try `/status celestiavalcons1XXXXXXX`")
+		return nil
+	}
+
+	zap.L().Info("status validator", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("address", c.Args()[0]))
+	stats, vm, err := t.mm.GetCurrentState(c.Sender().ID, c.Args()[0])
+	if err != nil {
+		t.Send(c.Chat(), err.Error())
+		zap.L().Debug("statusHandler", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("address", c.Args()[0]))
+		return err
+	}
+
+	result := t.GetCurrentStatsEmbed(stats, vm)
+
+	t.Send(c.Chat(), result)
 
 	return nil
 }

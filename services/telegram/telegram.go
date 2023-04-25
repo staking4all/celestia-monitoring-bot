@@ -57,7 +57,7 @@ func (t *telegramNotificationService) SetMonitoManager(mm services.MonitorManage
 }
 
 func formattedTime(t time.Time) string {
-	return fmt.Sprintf("<t:%d:R>", t.Unix())
+	return t.Format(time.UnixDate)
 }
 
 func getColorForAlertLevel(alertLevel models.AlertLevel) (int, string) {
@@ -73,7 +73,7 @@ func getColorForAlertLevel(alertLevel models.AlertLevel) (int, string) {
 	}
 }
 
-func GetCurrentStatsEmbed(stats models.ValidatorStats, vm *models.Validator) string {
+func (t *telegramNotificationService) GetCurrentStatsEmbed(stats models.ValidatorStats, vm models.Validator) string {
 	var uptime string
 	var title string
 
@@ -109,7 +109,7 @@ func GetCurrentStatsEmbed(stats models.ValidatorStats, vm *models.Validator) str
 			default:
 				recentSignedBlocksIcon = iconGood
 			}
-			recentSignedBlocks = fmt.Sprintf("%s Latest Blocks Signed: **%d/%d**", recentSignedBlocksIcon, models.DefaultRecentBlocksToCheck-stats.RecentMissedBlocks, models.DefaultRecentBlocksToCheck)
+			recentSignedBlocks = fmt.Sprintf("%s Latest Blocks Signed: **%d/%d**", recentSignedBlocksIcon, t.config.ValidatorsMonitor.RecentBlocksToCheck-stats.RecentMissedBlocks, t.config.ValidatorsMonitor.RecentBlocksToCheck)
 		}
 		latestBlock = fmt.Sprintf("%s Height **%s** - **%s**", rpcStatusIcon, fmt.Sprint(stats.Height), formattedTime(stats.Timestamp))
 	}

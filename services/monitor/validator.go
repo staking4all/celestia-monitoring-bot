@@ -1,6 +1,7 @@
 package monitor
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -65,8 +66,8 @@ func (m *monitorService) getData(
 	slashingPeriod := slashingInfo.Params.SignedBlocksWindow
 	stats.SlashingPeriodUptime = 100.0 - 100.0*(float64(signingInfo.MissedBlocksCounter)/float64(slashingPeriod))
 
-	if stats.SlashingPeriodUptime < models.DefaultSlashingPeriodUptimeErrorThreshold {
-		stats.AddIgnorableError(models.NewSlashingSLAError(stats.SlashingPeriodUptime, models.DefaultSlashingPeriodUptimeErrorThreshold))
+	if stats.SlashingPeriodUptime < m.config.ValidatorsMonitor.SlashingPeriodUptimeErrorThreshold {
+		stats.AddIgnorableError(models.NewSlashingSLAError(stats.SlashingPeriodUptime, m.config.ValidatorsMonitor.SlashingPeriodUptimeErrorThreshold))
 	}
 
 	stats.Height = nodeStatus.SyncInfo.LatestBlockHeight
@@ -99,7 +100,7 @@ func (m *monitorService) getData(
 	}
 
 	if stats.RecentMissedBlocks > missedBlocksThreshold {
-		stats.AddIgnorableError(models.NewMissedRecentBlocksError(stats.RecentMissedBlocks, models.DefaultRecentBlocksToCheck))
+		stats.AddIgnorableError(models.NewMissedRecentBlocksError(stats.RecentMissedBlocks, m.config.ValidatorsMonitor.RecentBlocksToCheck))
 		// Go back to find last signed block
 		if stats.LastSignedBlockHeight == -1 {
 			for i := stats.Height - RecentBlocksToCheck; stats.LastSignedBlockHeight == -1 && i > (stats.Height-slashingPeriod) && i > 0; i-- {
@@ -129,4 +130,18 @@ func (m *monitorService) getData(
 	}
 
 	return stats, nil
+}
+
+func (m *monitorService) GetCurrentState(userID int64, address string) (stats models.ValidatorStats, vm models.Validator, err error) {
+	m.alertStateLock.Lock()
+	defer m.alertStateLock.Unlock()
+
+	if m.userState[userID] != nil && m.userState[userID][address] != nil {
+		vm = *m.userState[userID][address].UserValidator
+		stats = m.valStats[address]
+	} else {
+		err = fmt.Errorf("validator not registered for user: %s", address)
+	}
+
+	return
 }

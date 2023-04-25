@@ -18,6 +18,7 @@ type monitorService struct {
 	userState      map[int64]map[string]*models.ValidatorAlertState
 	valStats       map[string]models.ValidatorStats
 	alertStateLock sync.Mutex
+	valStatsLock   sync.Mutex
 
 	config models.Config
 	client services.CosmosClient
@@ -147,7 +148,7 @@ func (m *monitorService) Run() error {
 			continue
 		}
 
-		m.valStats = make(map[string]models.ValidatorStats)
+		newValStatsMap := make(map[string]models.ValidatorStats)
 		statsLock := sync.Mutex{}
 		wg := sync.WaitGroup{}
 
@@ -177,14 +178,22 @@ func (m *monitorService) Run() error {
 				}
 				valStats.DetermineAggregatedErrorsAndAlertLevel()
 				statsLock.Lock()
-				m.valStats[addr] = *valStats
+				newValStatsMap[addr] = *valStats
 				statsLock.Unlock()
 			}(addr)
 		}
 		wg.Wait()
 
+		// copy to internal
+		m.valStatsLock.Lock()
+		m.valStats = make(map[string]models.ValidatorStats)
+		for addr, stats := range newValStatsMap {
+			m.valStats[addr] = stats
+		}
+		m.valStatsLock.Unlock()
+
 		m.alertStateLock.Lock()
-		for addr, stats := range m.valStats {
+		for addr, stats := range newValStatsMap {
 			// get users subscribed
 			for userID, val := range m.alertState[addr] {
 				notification := stats.GetAlertNotification(val, stats.Errs)
