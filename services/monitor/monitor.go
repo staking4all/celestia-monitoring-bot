@@ -32,6 +32,8 @@ func NewMonitorService(config models.Config, ns services.NotificationService) (s
 		ns:     ns,
 	}
 
+	ns.SetMonitoManager(m)
+
 	client, err := cosmos.NewCosmosClient(config.ValidatorsMonitor.RPC, config.ValidatorsMonitor.ChainID)
 	if err != nil {
 		return nil, err

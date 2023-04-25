@@ -52,6 +52,10 @@ func NewTelegramNotificationService(config models.Config) (services.Notification
 	return t, nil
 }
 
+func (t *telegramNotificationService) SetMonitoManager(mm services.MonitorManager) {
+	t.mm = mm
+}
+
 func formattedTime(t time.Time) string {
 	return fmt.Sprintf("<t:%d:R>", t.Unix())
 }
@@ -69,7 +73,7 @@ func getColorForAlertLevel(alertLevel models.AlertLevel) (int, string) {
 	}
 }
 
-func getCurrentStatsEmbed(stats models.ValidatorStats, vm *models.Validator) string {
+func GetCurrentStatsEmbed(stats models.ValidatorStats, vm *models.Validator) string {
 	var uptime string
 	var title string
 
@@ -131,11 +135,15 @@ func getCurrentStatsEmbed(stats models.ValidatorStats, vm *models.Validator) str
 }
 
 func (t *telegramNotificationService) PushMessage(userID int64, chatType telebot.ChatType, mdText string) (*telebot.Message, error) {
-	zap.L().Debug("message", zap.String("message", mdText))
-	return t.bot.Send(&telebot.Chat{
+	return t.Send(&telebot.Chat{
 		ID:   userID,
 		Type: chatType,
-	}, mdText, &telebot.SendOptions{ParseMode: telebot.ModeMarkdown})
+	}, mdText)
+}
+
+func (t *telegramNotificationService) Send(chat *telebot.Chat, mdText string) (*telebot.Message, error) {
+	zap.L().Debug("message", zap.String("message", mdText))
+	return t.bot.Send(chat, mdText, &telebot.SendOptions{ParseMode: telebot.ModeMarkdown})
 }
 
 // implements NotificationService interface

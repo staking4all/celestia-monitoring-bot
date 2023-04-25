@@ -26,4 +26,5 @@ type MonitorManager interface {
 type NotificationService interface {
 	// send one time alert for validator
 	SendValidatorAlertNotification(userID int64, vm *models.Validator, stats models.ValidatorStats, alertNotification *models.ValidatorAlertNotification)
+	SetMonitoManager(mm MonitorManager)
 }
