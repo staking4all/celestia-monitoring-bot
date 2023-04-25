@@ -51,7 +51,9 @@ var monitorCmd = &cobra.Command{
 			zap.L().Error("error stating monitor", zap.Error(err))
 			return err
 		}
-		defer m.Stop()
+		defer func() {
+			_ = m.Stop()
+		}()
 
 		err = m.Run()
 		if err != nil {

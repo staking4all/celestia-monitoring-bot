@@ -169,7 +169,7 @@ func (t *telegramNotificationService) SendValidatorAlertNotification(
 			alertString += fmt.Sprintf("\n• %s", alert)
 		}
 		_, icon := getColorForAlertLevel(alertNotification.AlertLevel)
-		t.PushMessage(userID, telebot.ChatPrivate, fmt.Sprintf("%s *%s*\n\n\n**Errors:**\n%s", icon, embedTitle, strings.Trim(alertString, "\n")))
+		_, _ = t.PushMessage(userID, telebot.ChatPrivate, fmt.Sprintf("%s *%s*\n\n\n**Errors:**\n%s", icon, embedTitle, strings.Trim(alertString, "\n")))
 	}
 
 	if len(alertNotification.ClearedAlerts) > 0 {
@@ -178,7 +178,7 @@ func (t *telegramNotificationService) SendValidatorAlertNotification(
 			clearedAlertsString += fmt.Sprintf("\n• %s", alert)
 		}
 
-		t.PushMessage(userID, telebot.ChatPrivate, fmt.Sprintf("%s *%s*\n\n\n**Errors cleared:**\n%s", iconGood, embedTitle, strings.Trim(clearedAlertsString, "\n")))
+		_, _ = t.PushMessage(userID, telebot.ChatPrivate, fmt.Sprintf("%s *%s*\n\n\n**Errors cleared:**\n%s", iconGood, embedTitle, strings.Trim(clearedAlertsString, "\n")))
 	}
 }
 

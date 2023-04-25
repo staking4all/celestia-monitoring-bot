@@ -11,14 +11,14 @@ func (t *telegramNotificationService) buttonHandler() {
 	t.bot.Handle(&telebot.InlineButton{
 		Unique: "show_menu",
 	}, func(c telebot.Context) error {
-		t.bot.Delete(c.Message())
+		_ = t.bot.Delete(c.Message())
 		return t.showMenu(c)
 	})
 
 	t.bot.Handle(&telebot.InlineButton{
 		Unique: "add_menu",
 	}, func(c telebot.Context) error {
-		t.bot.Delete(c.Message())
+		_ = t.bot.Delete(c.Message())
 		return t.addValidatorHandler(c)
 	})
 
@@ -34,7 +34,7 @@ func (t *telegramNotificationService) menuHandler(c telebot.Context) error {
 	var buffer bytes.Buffer
 	if len(c.Args()) > 0 {
 		buffer.WriteString("Invalid parameter! try: /menu")
-		t.bot.Send(c.Chat(), buffer.String())
+		_, _ = t.bot.Send(c.Chat(), buffer.String())
 		return nil
 	}
 
@@ -67,7 +67,7 @@ func (t *telegramNotificationService) showMenu(c telebot.Context) error {
 		InlineKeyboard: inlineKeys,
 	}
 
-	t.bot.Send(c.Chat(), buffer.String(), opt)
+	_, _ = t.bot.Send(c.Chat(), buffer.String(), opt)
 
 	return nil
 }
