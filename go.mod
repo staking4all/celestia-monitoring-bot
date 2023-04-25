@@ -5,6 +5,7 @@ go 1.19
 require (
 	github.com/cometbft/cometbft v0.37.0
 	github.com/cosmos/cosmos-sdk v0.47.1
+	github.com/dgraph-io/badger/v4 v4.1.0
 	github.com/spf13/cobra v1.6.1
 	go.uber.org/zap v1.23.0
 	gopkg.in/telebot.v3 v3.1.3
@@ -50,9 +51,11 @@ require (
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/protobuf v1.3.3 // indirect
 	github.com/golang/glog v1.1.0 // indirect
+	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.1.2 // indirect
+	github.com/google/flatbuffers v1.12.1 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
@@ -100,6 +103,7 @@ require (
 	github.com/zondax/hid v0.9.1 // indirect
 	github.com/zondax/ledger-go v0.14.0 // indirect
 	go.etcd.io/bbolt v1.3.7 // indirect
+	go.opencensus.io v0.24.0 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect

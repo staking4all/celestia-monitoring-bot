@@ -30,3 +30,10 @@ type NotificationService interface {
 	SendValidatorAlertNotification(userID int64, vm *models.Validator, stats models.ValidatorStats, alertNotification *models.ValidatorAlertNotification)
 	SetMonitoManager(mm MonitorManager)
 }
+
+type PersistenceDB interface {
+	Close() error
+	Add(userID int64, validator *models.Validator) error
+	Remove(userID int64, address string) error
+	List() (map[int64][]models.Validator, error)
+}
