@@ -11,6 +11,12 @@ type Validator struct {
 	NotifyEvery int64  `json:"notify_every"`
 }
 
+func (v *Validator) Copy() *Validator {
+	cp := &Validator{}
+	*cp = *v
+	return cp
+}
+
 func NewValidator(name string, addess string) *Validator {
 	return &Validator{
 		Name:        name,

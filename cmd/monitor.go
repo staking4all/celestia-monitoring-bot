@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/staking4all/celestia-monitoring-bot/services/db"
 	"github.com/staking4all/celestia-monitoring-bot/services/models"
 	"github.com/staking4all/celestia-monitoring-bot/services/monitor"
 	"github.com/staking4all/celestia-monitoring-bot/services/telegram"
@@ -34,15 +35,23 @@ var monitorCmd = &cobra.Command{
 
 		tn, err := telegram.NewTelegramNotificationService(config)
 		if err != nil {
-			zap.L().Error("error stating telegram notification", zap.Error(err))
+			zap.L().Error("error starting telegram notification", zap.Error(err))
 			return err
 		}
 
-		m, err := monitor.NewMonitorService(config, tn)
+		db, err := db.NewDB()
+		if err != nil {
+			zap.L().Error("error starting database", zap.Error(err))
+			return err
+		}
+		defer db.Close()
+
+		m, err := monitor.NewMonitorService(config, tn, db)
 		if err != nil {
 			zap.L().Error("error stating monitor", zap.Error(err))
 			return err
 		}
+		defer m.Stop()
 
 		err = m.Run()
 		if err != nil {

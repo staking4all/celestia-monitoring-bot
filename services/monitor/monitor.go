@@ -23,9 +23,10 @@ type monitorService struct {
 	config models.Config
 	client services.CosmosClient
 	ns     services.NotificationService
+	db     services.PersistenceDB
 }
 
-func NewMonitorService(config models.Config, ns services.NotificationService) (services.MonitorService, error) {
+func NewMonitorService(config models.Config, ns services.NotificationService, db services.PersistenceDB) (services.MonitorService, error) {
 	m := &monitorService{
 		alertState:     make(map[string]map[int64]*models.ValidatorAlertState),
 		userState:      make(map[int64]map[string]*models.ValidatorAlertState),
@@ -33,9 +34,24 @@ func NewMonitorService(config models.Config, ns services.NotificationService) (s
 
 		config: config,
 		ns:     ns,
+		db:     db,
 	}
 
 	ns.SetMonitoManager(m)
+
+	data, err := db.List()
+	if err != nil {
+		return nil, fmt.Errorf("loading database info: %+v", err)
+	}
+
+	for userID, valList := range data {
+		for _, val := range valList {
+			err := m.load(userID, &val)
+			if err != nil {
+				return nil, fmt.Errorf("loading database info: %+v", err)
+			}
+		}
+	}
 
 	client, err := cosmos.NewCosmosClient(config.ValidatorsMonitor.RPC, config.ValidatorsMonitor.ChainID)
 	if err != nil {
@@ -47,7 +63,9 @@ func NewMonitorService(config models.Config, ns services.NotificationService) (s
 	return m, nil
 }
 
-func (m *monitorService) Add(userID int64, validator *models.Validator) error {
+func (m *monitorService) load(userID int64, v *models.Validator) error {
+	validator := v.Copy()
+
 	m.alertStateLock.Lock()
 	defer m.alertStateLock.Unlock()
 
@@ -82,8 +100,24 @@ func (m *monitorService) Add(userID int64, validator *models.Validator) error {
 	}
 
 	m.userState[userID][validator.Address] = m.alertState[validator.Address][userID]
+	return nil
+}
 
-	zap.L().Debug("added validator", zap.Int64("userID", userID), zap.Any("validator", validator))
+func (m *monitorService) Add(userID int64, v *models.Validator) error {
+	err := m.load(userID, v)
+	if err != nil {
+		zap.L().Error("added validator", zap.Int64("userID", userID), zap.Any("validator", v), zap.Error(err))
+		return err
+	}
+
+	// persist info
+	err = m.db.Add(userID, v)
+	if err != nil {
+		zap.L().Error("added validator", zap.Int64("userID", userID), zap.Any("validator", v), zap.Error(err))
+		return err
+	}
+
+	zap.L().Debug("added validator", zap.Int64("userID", userID), zap.Any("validator", v))
 	return nil
 }
 
