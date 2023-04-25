@@ -246,7 +246,7 @@ func (m *monitorService) Run() error {
 					zap.L().Error("error getting validator info", zap.Error(err))
 					return
 				}
-				valStats.DetermineAggregatedErrorsAndAlertLevel()
+				valStats.DetermineAggregatedErrorsAndAlertLevel(m.config.ValidatorsMonitor)
 				statsLock.Lock()
 				newValStatsMap[addr] = *valStats
 				statsLock.Unlock()
@@ -266,7 +266,7 @@ func (m *monitorService) Run() error {
 		for addr, stats := range newValStatsMap {
 			// get users subscribed
 			for userID, val := range m.alertState[addr] {
-				notification := stats.GetAlertNotification(val, stats.Errs)
+				notification := stats.GetAlertNotification(val, stats.Errs, m.config.ValidatorsMonitor)
 				if notification != nil {
 					m.ns.SendValidatorAlertNotification(userID, val.UserValidator, stats, notification)
 				}

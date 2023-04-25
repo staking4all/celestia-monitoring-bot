@@ -134,10 +134,10 @@ func (stats *ValidatorStats) IncreaseAlertLevel(alertLevel AlertLevel) {
 }
 
 // determine alert level and any additional errors now that RPC checks are complete
-func (stats *ValidatorStats) DetermineAggregatedErrorsAndAlertLevel() {
+func (stats *ValidatorStats) DetermineAggregatedErrorsAndAlertLevel(c ValidatorsMonitorConfig) {
 	if stats.Height == stats.LastSignedBlockHeight {
 		if stats.RecentMissedBlocks == 0 {
-			if stats.SlashingPeriodUptime > DefaultSlashingPeriodUptimeWarningThreshold {
+			if stats.SlashingPeriodUptime > c.SlashingPeriodUptimeWarningThreshold {
 				// no recent missed blocks and above warning threshold for slashing period uptime, all good
 				return
 			}
@@ -151,9 +151,9 @@ func (stats *ValidatorStats) DetermineAggregatedErrorsAndAlertLevel() {
 	}
 
 	// past this, we have not signed the most recent block
-	if stats.RecentMissedBlocks < DefaultRecentBlocksToCheck {
+	if stats.RecentMissedBlocks < c.RecentBlocksToCheck {
 		// we have missed some, but not all, of the recent blocks to check
-		if stats.SlashingPeriodUptime > DefaultSlashingPeriodUptimeErrorThreshold {
+		if stats.SlashingPeriodUptime > c.SlashingPeriodUptimeErrorThreshold {
 			stats.IncreaseAlertLevel(AlertLevelWarning)
 		} else {
 			// we are below slashing period uptime error threshold
@@ -168,6 +168,7 @@ func (stats *ValidatorStats) DetermineAggregatedErrorsAndAlertLevel() {
 func (stats *ValidatorStats) GetAlertNotification(
 	alertState *ValidatorAlertState,
 	errs []IgnorableError,
+	c ValidatorsMonitorConfig,
 ) *ValidatorAlertNotification {
 	var foundAlertTypes []AlertType
 	alertNotification := ValidatorAlertNotification{AlertLevel: AlertLevelNone}
@@ -235,7 +236,7 @@ func (stats *ValidatorStats) GetAlertNotification(
 				}
 			}
 			if stats.RecentMissedBlocks > recentMissedBlocksCounter {
-				if stats.RecentMissedBlocks > DefaultRecentMissedBlocksNotifyThreshold {
+				if stats.RecentMissedBlocks > c.RecentMissedBlocksNotifyThreshold {
 					stats.RecentMissedBlockAlertLevel = AlertLevelHigh
 					addRecentMissedBlocksAlertIfNecessary(AlertLevelHigh)
 				} else {
@@ -297,7 +298,7 @@ func (stats *ValidatorStats) GetAlertNotification(
 					alertNotification.ClearedAlerts = append(alertNotification.ClearedAlerts, "rpc block fetch error")
 				case AlertTypeMissedRecentBlocks:
 					alertNotification.ClearedAlerts = append(alertNotification.ClearedAlerts, "missed recent blocks")
-					if alertState.RecentMissedBlocksCounterMax > DefaultRecentMissedBlocksNotifyThreshold {
+					if alertState.RecentMissedBlocksCounterMax > c.RecentMissedBlocksNotifyThreshold {
 						alertNotification.NotifyForClear = true
 					}
 					alertState.RecentMissedBlocksCounter = 0
