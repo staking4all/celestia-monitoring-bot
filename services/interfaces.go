@@ -18,7 +18,12 @@ type MonitorService interface {
 	Stop() error
 }
 
+type MonitorManager interface {
+	Add(userID int64, validator *models.Validator) error
+	Remove(userID int64, address string) error
+}
+
 type NotificationService interface {
 	// send one time alert for validator
-	SendValidatorAlertNotification(userID string, vm *models.Validator, stats models.ValidatorStats, alertNotification *models.ValidatorAlertNotification)
+	SendValidatorAlertNotification(userID int64, vm *models.Validator, stats models.ValidatorStats, alertNotification *models.ValidatorAlertNotification)
 }

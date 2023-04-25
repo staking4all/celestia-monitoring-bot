@@ -43,6 +43,9 @@ func (m *monitorService) getData(
 		if err == nil {
 			break
 		}
+
+		zap.L().Debug("getting info", zap.Int("retry", i), zap.Error(err))
+
 		if i < m.config.ValidatorsMonitor.RPCRetries-1 {
 			time.Sleep(time.Duration((i*i)+1) * time.Second) // exponential backoff retry
 		} else {

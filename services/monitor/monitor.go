@@ -1,9 +1,12 @@
 package monitor
 
 import (
+	"fmt"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/types/bech32"
 	"github.com/staking4all/celestia-monitoring-bot/services"
 	"github.com/staking4all/celestia-monitoring-bot/services/cosmos"
 	"github.com/staking4all/celestia-monitoring-bot/services/models"
@@ -11,7 +14,7 @@ import (
 )
 
 type monitorService struct {
-	alertState     map[string]map[string]*models.ValidatorAlertState
+	alertState     map[string]map[int64]*models.ValidatorAlertState
 	valStats       map[string]models.ValidatorStats
 	alertStateLock sync.Mutex
 
@@ -20,12 +23,13 @@ type monitorService struct {
 	ns     services.NotificationService
 }
 
-func NewMonitorService(config models.Config) (services.MonitorService, error) {
+func NewMonitorService(config models.Config, ns services.NotificationService) (services.MonitorService, error) {
 	m := &monitorService{
-		alertState:     make(map[string]map[string]*models.ValidatorAlertState),
+		alertState:     make(map[string]map[int64]*models.ValidatorAlertState),
 		alertStateLock: sync.Mutex{},
 
 		config: config,
+		ns:     ns,
 	}
 
 	client, err := cosmos.NewCosmosClient(config.ValidatorsMonitor.RPC, config.ValidatorsMonitor.ChainID)
@@ -38,12 +42,21 @@ func NewMonitorService(config models.Config) (services.MonitorService, error) {
 	return m, nil
 }
 
-func (m *monitorService) Add(userID string, validator *models.Validator) {
+func (m *monitorService) Add(userID int64, validator *models.Validator) error {
 	m.alertStateLock.Lock()
 	defer m.alertStateLock.Unlock()
 
+	// validate address
+	if !strings.HasPrefix(validator.Address, "celestiavalcons1") {
+		return fmt.Errorf("invalid address, should start with `celestiavalcons1`")
+	}
+
+	if _, _, err := bech32.DecodeAndConvert(validator.Address); err != nil {
+		return fmt.Errorf("invalid address: %+v", err)
+	}
+
 	if m.alertState[validator.Address] == nil {
-		m.alertState[validator.Address] = make(map[string]*models.ValidatorAlertState)
+		m.alertState[validator.Address] = make(map[int64]*models.ValidatorAlertState)
 	}
 
 	m.alertState[validator.Address][userID] = &models.ValidatorAlertState{
@@ -54,9 +67,12 @@ func (m *monitorService) Add(userID string, validator *models.Validator) {
 		SentryHaltErrorCounts:      make(map[string]int64),
 		SentryLatestHeight:         make(map[string]int64),
 	}
+
+	zap.L().Debug("added validator", zap.Int64("userID", userID), zap.Any("validator", validator))
+	return nil
 }
 
-func (m *monitorService) Remove(userID string, address string) {
+func (m *monitorService) Remove(userID int64, address string) error {
 	m.alertStateLock.Lock()
 	defer m.alertStateLock.Unlock()
 
@@ -67,6 +83,8 @@ func (m *monitorService) Remove(userID string, address string) {
 			delete(m.alertState, address)
 		}
 	}
+
+	return nil
 }
 
 func (m *monitorService) Stop() error {
@@ -110,7 +128,18 @@ func (m *monitorService) Run() error {
 		m.valStats = make(map[string]models.ValidatorStats)
 		statsLock := sync.Mutex{}
 		wg := sync.WaitGroup{}
-		for addr := range m.alertState {
+
+		zap.L().Debug("getting validators to monitor")
+		m.alertStateLock.Lock()
+		// load map keys
+		keys := make([]string, 0, len(m.alertState))
+		for k := range m.alertState {
+			keys = append(keys, k)
+		}
+		m.alertStateLock.Unlock()
+		zap.L().Debug("getting validators to monitor", zap.Any("list", keys))
+
+		for _, addr := range keys {
 			zap.L().Debug("checking node", zap.String("address", addr))
 			wg.Add(1)
 			go func(addr string) {
@@ -132,9 +161,9 @@ func (m *monitorService) Run() error {
 		}
 		wg.Wait()
 
+		m.alertStateLock.Lock()
 		for addr, stats := range m.valStats {
-
-			// get users subscribe
+			// get users subscribed
 			for userID, val := range m.alertState[addr] {
 				notification := stats.GetAlertNotification(val, stats.Errs)
 				if notification != nil {
@@ -142,6 +171,7 @@ func (m *monitorService) Run() error {
 				}
 			}
 		}
+		m.alertStateLock.Unlock()
 	}
 
 	return nil
