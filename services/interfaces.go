@@ -21,7 +21,8 @@ type MonitorService interface {
 type MonitorManager interface {
 	Add(userID int64, validator *models.Validator) error
 	Remove(userID int64, address string) error
-	GetCurrentState(userID int64, address string) (models.ValidatorStats, models.Validator, error)
+	List(userID int64) ([]models.ValidatorStatsRegister, error)
+	GetCurrentState(userID int64, address string) (models.ValidatorStatsRegister, error)
 }
 
 type NotificationService interface {

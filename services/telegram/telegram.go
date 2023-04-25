@@ -73,7 +73,7 @@ func getColorForAlertLevel(alertLevel models.AlertLevel) (int, string) {
 	}
 }
 
-func (t *telegramNotificationService) GetCurrentStatsEmbed(stats models.ValidatorStats, vm models.Validator) string {
+func (t *telegramNotificationService) GetCurrentStatsEmbed(stats models.ValidatorStatsRegister) string {
 	var uptime string
 	var title string
 
@@ -83,7 +83,7 @@ func (t *telegramNotificationService) GetCurrentStatsEmbed(stats models.Validato
 		uptime = fmt.Sprintf("%.02f", stats.SlashingPeriodUptime)
 	}
 
-	title = fmt.Sprintf("%s (%s%% up)", vm.Name, uptime)
+	title = fmt.Sprintf("%s (%s%% up)", stats.Validator.Name, uptime)
 
 	var description string
 	sentryString := ""
@@ -180,4 +180,27 @@ func (t *telegramNotificationService) SendValidatorAlertNotification(
 
 		t.PushMessage(userID, telebot.ChatPrivate, fmt.Sprintf("%s *%s*\n\n\n**Errors cleared:**\n%s", iconGood, embedTitle, strings.Trim(clearedAlertsString, "\n")))
 	}
+}
+
+func (t *telegramNotificationService) List(stats []models.ValidatorStatsRegister) (result string) {
+
+	result = "*Validator Monitor List:*\n"
+
+	for _, vs := range stats {
+		var uptime string
+		var title string
+		if vs.ValidatorStats.SlashingPeriodUptime == 0 {
+			uptime = "N/A"
+		} else {
+			uptime = fmt.Sprintf("%.02f", vs.ValidatorStats.SlashingPeriodUptime)
+		}
+
+		title = fmt.Sprintf("%s (%s%% up)", vs.Validator.Name, uptime)
+
+		_, icon := getColorForAlertLevel(vs.ValidatorStats.AlertLevel)
+
+		result += fmt.Sprintf("  - %s *%s* %s\n", icon, title, icon)
+	}
+
+	return
 }

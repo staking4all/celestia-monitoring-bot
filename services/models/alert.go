@@ -77,6 +77,11 @@ type SentryStats struct {
 	SentryAlertType SentryAlertType
 }
 
+type ValidatorStatsRegister struct {
+	Validator
+	ValidatorStats
+}
+
 type ValidatorStats struct {
 	Timestamp                   time.Time
 	Height                      int64

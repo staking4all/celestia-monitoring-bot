@@ -17,6 +17,7 @@ func (t *telegramNotificationService) addValidatorHandler(c telebot.Context) err
 	zap.L().Info("add validator", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("name", c.Args()[0]), zap.String("address", c.Args()[1]))
 	err := t.mm.Add(c.Sender().ID, models.NewValidator(c.Args()[0], c.Args()[1]))
 	if err != nil {
+		zap.L().Warn("addHandler", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("name", c.Args()[0]), zap.String("address", c.Args()[1]), zap.Error(err))
 		t.Send(c.Chat(), err.Error())
 		return err
 	}
@@ -36,6 +37,7 @@ func (t *telegramNotificationService) removeValidatorHandler(c telebot.Context) 
 	zap.L().Info("remove validator", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("address", c.Args()[0]))
 	err := t.mm.Remove(c.Sender().ID, c.Args()[0])
 	if err != nil {
+		zap.L().Warn("removeHandler", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("address", c.Args()[0]), zap.Error(err))
 		t.Send(c.Chat(), err.Error())
 		return err
 	}
@@ -53,14 +55,14 @@ func (t *telegramNotificationService) statusHandler(c telebot.Context) error {
 	}
 
 	zap.L().Info("status validator", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("address", c.Args()[0]))
-	stats, vm, err := t.mm.GetCurrentState(c.Sender().ID, c.Args()[0])
+	stats, err := t.mm.GetCurrentState(c.Sender().ID, c.Args()[0])
 	if err != nil {
+		zap.L().Warn("statusHandler", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("address", c.Args()[0]), zap.Error(err))
 		t.Send(c.Chat(), err.Error())
-		zap.L().Debug("statusHandler", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("address", c.Args()[0]))
 		return err
 	}
 
-	result := t.GetCurrentStatsEmbed(stats, vm)
+	result := t.GetCurrentStatsEmbed(stats)
 
 	t.Send(c.Chat(), result)
 
@@ -68,5 +70,17 @@ func (t *telegramNotificationService) statusHandler(c telebot.Context) error {
 }
 
 func (t *telegramNotificationService) listValidatorHandler(c telebot.Context) error {
+	list, err := t.mm.List(c.Sender().ID)
+	if err != nil {
+		zap.L().Warn("listValidator", zap.Int64("userID", c.Sender().ID), zap.String("userName", c.Sender().Username), zap.String("address", c.Args()[0]), zap.Error(err))
+		t.Send(c.Chat(), err.Error())
+		return err
+	}
+
+	t.Send(c.Chat(), t.List(list))
+	if len(list) == 0 {
+		t.Send(c.Chat(), "*Empty List*")
+	}
+
 	return nil
 }

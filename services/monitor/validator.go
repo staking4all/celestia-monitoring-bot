@@ -132,16 +132,35 @@ func (m *monitorService) getData(
 	return stats, nil
 }
 
-func (m *monitorService) GetCurrentState(userID int64, address string) (stats models.ValidatorStats, vm models.Validator, err error) {
+func (m *monitorService) GetCurrentState(userID int64, address string) (stats models.ValidatorStatsRegister, err error) {
 	m.alertStateLock.Lock()
 	defer m.alertStateLock.Unlock()
+	m.valStatsLock.Lock()
+	defer m.valStatsLock.Unlock()
 
 	if m.userState[userID] != nil && m.userState[userID][address] != nil {
-		vm = *m.userState[userID][address].UserValidator
-		stats = m.valStats[address]
+		stats.Validator = *m.userState[userID][address].UserValidator
+		stats.ValidatorStats = m.valStats[address]
 	} else {
 		err = fmt.Errorf("validator not registered for user: %s", address)
 	}
 
 	return
+}
+
+func (m *monitorService) List(userID int64) ([]models.ValidatorStatsRegister, error) {
+	m.alertStateLock.Lock()
+	defer m.alertStateLock.Unlock()
+	m.valStatsLock.Lock()
+	defer m.valStatsLock.Unlock()
+
+	list := make([]models.ValidatorStatsRegister, 0)
+	for addr, as := range m.userState[userID] {
+		list = append(list, models.ValidatorStatsRegister{
+			ValidatorStats: m.valStats[addr],
+			Validator:      *as.UserValidator,
+		})
+	}
+
+	return list, nil
 }
