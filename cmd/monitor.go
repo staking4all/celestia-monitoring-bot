@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/staking4all/celestia-monitoring-bot/services/models"
 	"github.com/staking4all/celestia-monitoring-bot/services/monitor"
+	"github.com/staking4all/celestia-monitoring-bot/services/telegram"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 )
@@ -31,8 +32,13 @@ var monitorCmd = &cobra.Command{
 		}
 		config.LoadDefault()
 
-		// TODO: implement telegram register and alert service
-		m, err := monitor.NewMonitorService(config)
+		tn, err := telegram.NewTelegramNotificationService(config)
+		if err != nil {
+			zap.L().Error("error stating telegram notification", zap.Error(err))
+			return err
+		}
+
+		m, err := monitor.NewMonitorService(config, tn)
 		if err != nil {
 			zap.L().Error("error stating monitor", zap.Error(err))
 			return err
