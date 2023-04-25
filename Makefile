@@ -12,7 +12,7 @@ ifeq (,$(VERSION))
   endif
 endif
 
-FQCN = docker.io/staking4all/celestia-monitoring-bot # default value, overide with: make -e FQCN="foo"
+FQCN = docker.io/staking4all/celestia-monitoring-bot
 
 all:
 	go run . monitor
