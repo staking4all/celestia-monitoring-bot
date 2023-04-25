@@ -1,7 +1,10 @@
 package monitor
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"time"
@@ -19,6 +22,7 @@ type monitorService struct {
 	valStats       map[string]models.ValidatorStats
 	alertStateLock sync.Mutex
 	valStatsLock   sync.Mutex
+	ctx            context.Context
 
 	config models.Config
 	client services.CosmosClient
@@ -31,6 +35,7 @@ func NewMonitorService(config models.Config, ns services.NotificationService, db
 		alertState:     make(map[string]map[int64]*models.ValidatorAlertState),
 		userState:      make(map[int64]map[string]*models.ValidatorAlertState),
 		alertStateLock: sync.Mutex{},
+		ctx:            context.Background(),
 
 		config: config,
 		ns:     ns,
@@ -150,17 +155,43 @@ func (m *monitorService) Remove(userID int64, address string) error {
 }
 
 func (m *monitorService) Stop() error {
-	// TODO: implement stop function
+	m.ctx.Done()
+	zap.L().Info("validators monitoring stopped")
+
 	return nil
 }
 
+const (
+	exitCodeErr       = 1
+	exitCodeInterrupt = 2
+)
+
 func (m *monitorService) Run() error {
+	ctx, cancel := context.WithCancel(m.ctx)
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	defer func() {
+		signal.Stop(signalChan)
+		cancel()
+	}()
+
+	go func() {
+		select {
+		case <-signalChan: // first signal, cancel context
+			zap.L().Info("validators monitoring stopping")
+			cancel()
+		case <-ctx.Done():
+		}
+		<-signalChan // second signal, hard exit
+		os.Exit(exitCodeInterrupt)
+	}()
+
 	ticker := time.NewTicker(10 * time.Second)
 
 	concurrentGoroutines := make(chan struct{}, m.config.ValidatorsMonitor.MaxNbConcurrentGoroutines)
 
 	zap.L().Info("starting node monitoring")
-	for range ticker.C {
+	for {
 		zap.L().Info("checking data")
 
 		slashingInfo, err := m.client.GetSlashingInfo()
@@ -242,7 +273,11 @@ func (m *monitorService) Run() error {
 			}
 		}
 		m.alertStateLock.Unlock()
-	}
 
-	return nil
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+		}
+	}
 }
