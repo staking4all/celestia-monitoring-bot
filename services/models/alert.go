@@ -127,45 +127,45 @@ type ValidatorAlertNotification struct {
 	AlertLevel     AlertLevel
 }
 
-func (stats *ValidatorStats) IncreaseAlertLevel(alertLevel AlertLevel) {
-	if stats.AlertLevel < alertLevel {
-		stats.AlertLevel = alertLevel
+func (v *ValidatorStats) IncreaseAlertLevel(alertLevel AlertLevel) {
+	if v.AlertLevel < alertLevel {
+		v.AlertLevel = alertLevel
 	}
 }
 
 // determine alert level and any additional errors now that RPC checks are complete
-func (stats *ValidatorStats) DetermineAggregatedErrorsAndAlertLevel(c ValidatorsMonitorConfig) {
-	if stats.Height == stats.LastSignedBlockHeight {
-		if stats.RecentMissedBlocks == 0 {
-			if stats.SlashingPeriodUptime > c.SlashingPeriodUptimeWarningThreshold {
+func (v *ValidatorStats) DetermineAggregatedErrorsAndAlertLevel(c ValidatorsMonitorConfig) {
+	if v.Height == v.LastSignedBlockHeight {
+		if v.RecentMissedBlocks == 0 {
+			if v.SlashingPeriodUptime > c.SlashingPeriodUptimeWarningThreshold {
 				// no recent missed blocks and above warning threshold for slashing period uptime, all good
 				return
 			}
 			// Warning for recovering from downtime. Not error because we are currently signing
-			stats.IncreaseAlertLevel(AlertLevelWarning)
+			v.IncreaseAlertLevel(AlertLevelWarning)
 			return
 		}
 		// Warning for missing recent blocks, but have signed current block
-		stats.IncreaseAlertLevel(AlertLevelWarning)
+		v.IncreaseAlertLevel(AlertLevelWarning)
 		return
 	}
 
 	// past this, we have not signed the most recent block
-	if stats.RecentMissedBlocks < c.RecentBlocksToCheck {
+	if v.RecentMissedBlocks < c.RecentBlocksToCheck {
 		// we have missed some, but not all, of the recent blocks to check
-		if stats.SlashingPeriodUptime > c.SlashingPeriodUptimeErrorThreshold {
-			stats.IncreaseAlertLevel(AlertLevelWarning)
+		if v.SlashingPeriodUptime > c.SlashingPeriodUptimeErrorThreshold {
+			v.IncreaseAlertLevel(AlertLevelWarning)
 		} else {
 			// we are below slashing period uptime error threshold
-			stats.IncreaseAlertLevel(AlertLevelHigh)
+			v.IncreaseAlertLevel(AlertLevelHigh)
 		}
 	} else {
 		// Error, missed all of the recent blocks to check
-		stats.IncreaseAlertLevel(AlertLevelHigh)
+		v.IncreaseAlertLevel(AlertLevelHigh)
 	}
 }
 
-func (stats *ValidatorStats) GetAlertNotification(
+func (v *ValidatorStats) GetAlertNotification(
 	alertState *ValidatorAlertState,
 	errs []IgnorableError,
 	c ValidatorsMonitorConfig,
@@ -207,11 +207,11 @@ func (stats *ValidatorStats) GetAlertNotification(
 			handleGenericAlert(err, AlertTypeTombstoned, AlertLevelCritical)
 		case *OutOfSyncError:
 			handleGenericAlert(err, AlertTypeOutOfSync, AlertLevelWarning)
-			stats.RPCError = true
+			v.RPCError = true
 		case *ChainHaltError:
 			fmt.Printf("found chain halt error\n")
 			handleGenericAlert(err, AlertTypeHalt, AlertLevelHigh)
-			stats.RPCError = true
+			v.RPCError = true
 		case *BlockFetchError:
 			handleGenericAlert(err, AlertTypeBlockFetch, AlertLevelWarning)
 		case *SlashingSLAError:
@@ -230,30 +230,30 @@ func (stats *ValidatorStats) GetAlertNotification(
 			}
 		case *MissedRecentBlocksError:
 			addRecentMissedBlocksAlertIfNecessary := func(alertLevel AlertLevel) {
-				if shouldNotifyForFoundAlertType(AlertTypeMissedRecentBlocks) || stats.RecentMissedBlocks != recentMissedBlocksCounter {
+				if shouldNotifyForFoundAlertType(AlertTypeMissedRecentBlocks) || v.RecentMissedBlocks != recentMissedBlocksCounter {
 					addAlert(err)
 					setAlertLevel(alertLevel)
 				}
 			}
-			if stats.RecentMissedBlocks > recentMissedBlocksCounter {
-				if stats.RecentMissedBlocks > c.RecentMissedBlocksNotifyThreshold {
-					stats.RecentMissedBlockAlertLevel = AlertLevelHigh
+			if v.RecentMissedBlocks > recentMissedBlocksCounter {
+				if v.RecentMissedBlocks > c.RecentMissedBlocksNotifyThreshold {
+					v.RecentMissedBlockAlertLevel = AlertLevelHigh
 					addRecentMissedBlocksAlertIfNecessary(AlertLevelHigh)
 				} else {
-					stats.RecentMissedBlockAlertLevel = AlertLevelWarning
+					v.RecentMissedBlockAlertLevel = AlertLevelWarning
 					addRecentMissedBlocksAlertIfNecessary(AlertLevelWarning)
 				}
 			} else {
-				stats.RecentMissedBlockAlertLevel = AlertLevelWarning
+				v.RecentMissedBlockAlertLevel = AlertLevelWarning
 				addRecentMissedBlocksAlertIfNecessary(AlertLevelWarning)
 			}
-			alertState.RecentMissedBlocksCounter = stats.RecentMissedBlocks
-			if stats.RecentMissedBlocks > alertState.RecentMissedBlocksCounterMax {
-				alertState.RecentMissedBlocksCounterMax = stats.RecentMissedBlocks
+			alertState.RecentMissedBlocksCounter = v.RecentMissedBlocks
+			if v.RecentMissedBlocks > alertState.RecentMissedBlocksCounterMax {
+				alertState.RecentMissedBlocksCounterMax = v.RecentMissedBlocks
 			}
 		case *GenericRPCError:
 			handleGenericAlert(err, AlertTypeGenericRPC, AlertLevelWarning)
-			stats.RPCError = true
+			v.RPCError = true
 
 		default:
 			addAlert(err)

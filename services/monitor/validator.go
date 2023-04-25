@@ -126,7 +126,6 @@ func (m *monitorService) getData(
 				}
 			}
 		}
-
 	}
 
 	return stats, nil

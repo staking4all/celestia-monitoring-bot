@@ -66,7 +66,6 @@ var monitorCmd = &cobra.Command{
 }
 
 func init() {
-
 	rootCmd.AddCommand(monitorCmd)
 	monitorCmd.Flags().StringP("file", "f", "./config.yaml", "File path to config yaml")
 }

@@ -15,16 +15,18 @@ type AlertActive interface {
 	Active(config AlertConfig) bool
 }
 
-type ignoreableError struct{ err error }
+type IgnoreableError struct{ err error }
 
-func (e *ignoreableError) Error() string {
+func (e *IgnoreableError) Error() string {
 	return e.err.Error()
 }
-func (e *ignoreableError) Active(config AlertConfig) bool {
+
+func (e *IgnoreableError) Active(_ AlertConfig) bool {
 	return true
 }
-func NewIgnorableError(err error) *ignoreableError {
-	return &ignoreableError{err}
+
+func NewIgnorableError(err error) *IgnoreableError {
+	return &IgnoreableError{err}
 }
 
 type JailedError struct{ until time.Time }

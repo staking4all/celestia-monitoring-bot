@@ -25,7 +25,7 @@ func (t *telegramNotificationService) RegisterHandlers() {
 	go t.bot.Start()
 }
 
-func (t *telegramNotificationService) handleText(c telebot.Context) error {
+func (t *telegramNotificationService) handleText(_ telebot.Context) error {
 	// nothing here...
 	return nil
 }

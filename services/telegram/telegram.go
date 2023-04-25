@@ -160,7 +160,6 @@ func (t *telegramNotificationService) SendValidatorAlertNotification(
 		embedTitle = fmt.Sprintf("%s `(%.02f%% up)`", vm.Name, stats.SlashingPeriodUptime)
 	} else {
 		embedTitle = fmt.Sprintf("%s `(N/A%% up)`", vm.Name)
-
 	}
 
 	if len(alertNotification.Alerts) > 0 {
@@ -183,7 +182,6 @@ func (t *telegramNotificationService) SendValidatorAlertNotification(
 }
 
 func (t *telegramNotificationService) List(stats []models.ValidatorStatsRegister) (result string) {
-
 	result = "*Validator Monitor List:*\n"
 
 	for _, vs := range stats {

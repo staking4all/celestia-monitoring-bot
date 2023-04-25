@@ -51,7 +51,8 @@ func NewMonitorService(config models.Config, ns services.NotificationService, db
 
 	for userID, valList := range data {
 		for _, val := range valList {
-			err := m.load(userID, &val)
+			v := val
+			err := m.load(userID, &v)
 			if err != nil {
 				return nil, fmt.Errorf("loading database info: %+v", err)
 			}

@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"github.com/dgraph-io/badger/v4"
+	"github.com/staking4all/celestia-monitoring-bot/services"
 	"github.com/staking4all/celestia-monitoring-bot/services/models"
 )
 
@@ -15,7 +16,7 @@ type badgerDB struct {
 	db *badger.DB
 }
 
-func NewDB() (*badgerDB, error) {
+func NewDB() (services.PersistenceDB, error) {
 	// Open a new Badger DB instance
 	options := badger.DefaultOptions(".badger_db")
 	db, err := badger.Open(options)

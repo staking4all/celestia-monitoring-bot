@@ -21,7 +21,6 @@ func (t *telegramNotificationService) buttonHandler() {
 		_ = t.bot.Delete(c.Message())
 		return t.addValidatorHandler(c)
 	})
-
 }
 
 func (t *telegramNotificationService) menuHandler(c telebot.Context) error {
