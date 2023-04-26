@@ -89,7 +89,7 @@ func (m *monitorService) load(userID int64, v *models.Validator) error {
 	}
 
 	if m.userState[userID][validator.Address] != nil {
-		return fmt.Errorf("already regitered")
+		return fmt.Errorf("already registered")
 	}
 
 	if m.alertState[validator.Address] == nil {
@@ -136,19 +136,25 @@ func (m *monitorService) Remove(userID int64, address string) error {
 	m.alertStateLock.Lock()
 	defer m.alertStateLock.Unlock()
 
+	if m.userState[userID] == nil {
+		return fmt.Errorf("not found")
+	}
+
+	if m.userState[userID][address] == nil {
+		return fmt.Errorf("not found")
+	}
+
+	delete(m.userState[userID], address)
+
+	if len(m.userState[userID]) == 0 {
+		delete(m.userState, userID)
+	}
+
 	if m.alertState[address] != nil {
 		delete(m.alertState[address], userID)
 
 		if len(m.alertState[address]) == 0 {
 			delete(m.alertState, address)
-		}
-	}
-
-	if m.userState[userID] != nil {
-		delete(m.userState[userID], address)
-
-		if len(m.userState[userID]) == 0 {
-			delete(m.userState, userID)
 		}
 	}
 
