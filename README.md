@@ -70,3 +70,6 @@ go install
 The look and feel of bot in Telegram
 
 <img width="685" alt="Phone screens shots" src="https://user-images.githubusercontent.com/61656547/236442448-72fa4a6f-f81e-44ef-9863-42d831185592.png">
+
+# Credits
+The code has been forked from strangelove-ventures/half-life and altered to be a telegram bot. Code has also been reworked as needed
