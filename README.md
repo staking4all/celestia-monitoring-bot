@@ -9,6 +9,8 @@ Monitors and alerts for scenarios such as:
 - Tombstoned status
 - Chain halted
 
+During celestia Incentivised Testnet the bot will be operational at this link(https://t.me/CelestiaVMBot) for demo purposes
+
 ## Quick start
 
 ### Download
